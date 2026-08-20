@@ -114,6 +114,13 @@ async def search_chat(chat: str, query: str, limit: int = 50, account: str = "de
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--transport", default="stdio", choices=["stdio", "sse"])
+    ap.add_argument("--transport", default="stdio", choices=["stdio", "sse", "http"])
+    ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--port", type=int, default=8000)
     args = ap.parse_args()
-    mcp.run(transport=args.transport)
+    if args.transport == "http":
+        mcp.settings.host = args.host
+        mcp.settings.port = args.port
+        mcp.run(transport="streamable-http")
+    else:
+        mcp.run(transport=args.transport)

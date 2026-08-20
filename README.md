@@ -60,6 +60,66 @@ claude mcp add telegram -- python "$(pwd)/telegram_mcp_server.py"
 > - Codex: `codex mcp list` — должен быть `telegram`
 > - Claude Code: `claude mcp list` — должен быть `telegram`
 
+## Если вы работаете в Desktop-приложении (не консоль)
+
+**ChatGPT Desktop** (Windows/macOS) — самый простой путь:
+1. Установите **ChatGPT Desktop** (chatgpt.com/download)
+2. `Settings` → **MCP servers** → **Add server**
+3. Тип **STDIO**, имя `telegram`
+4. Command: `python` / Arguments: полный путь к `telegram_mcp_server.py`
+   - macOS: Command = `/полный/путь/.venv/bin/python`, Arguments = `/полный/путь/telegram_mcp_server.py`
+   - Windows: Command = полный путь `.venv\Scripts\python.exe`, Arguments = полный путь `telegram_mcp_server.py`
+5. **Restart**, затем в чате `/mcp` — сервер `telegram` на месте
+
+> Важно: ChatGPT Desktop, Codex CLI и IDE-расширение **делят один конфиг** (`~/.codex/config.toml`). Если сервер добавлен один раз — он виден во всех трёх.
+
+**Claude Desktop**:
+1. Установите Claude Desktop (claude.com/download)
+2. Откройте `claude_desktop_config.json` (Claude → Settings → Developer):
+   - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+3. Добавьте:
+```json
+{
+  "mcpServers": {
+    "telegram": {
+      "command": "python",
+      "args": ["/полный/путь/telegram_mcp_server.py"]
+    }
+  }
+}
+```
+4. Перезапустите Claude Desktop. Инструменты `list_chats`/`read_chat`/`search_chat` появятся у агента.
+
+> **Про claude.ai и ChatGPT в браузере**: веб-версии не могут запускать локальные MCP-серверы (это процесс на вашей машине). Для них нужен либо десктоп-клиент (рекомендуется), либо публично размещённый remote MCP-сервер — сложнее и требует админ-прав (см. раздел «Remote MCP»).
+
+## Remote MCP (для claude.ai и доступа по URL)
+
+Если нужен доступ из claude.ai (connectors) или с других машин — поднимите сервер на хостинге:
+
+```bash
+# на сервере
+python telegram_mcp_server.py --transport sse   # или streamable http (см. раздел ниже)
+```
+
+- Требуется публичный URL + **bearer-токен** (иначе кто угодно сможет читать переписку)
+- В claude.ai: Settings → Connectors → Add → указать URL и токен (на Team/Enterprise добавляет админ)
+- В Codex Desktop/CLI: `codex mcp add telegram --url https://ваш-сервер/mcp --bearer-token-env-var TOKEN`
+
+> Безопасность: не открывайте remote-сервер без токена; используйте отдельную MTProto-сессию для каждого пользователя.
+
+### Remote-транспорт (streamable HTTP)
+
+Сервер поддерживает также `--transport http` (streamable HTTP, порт 8000 по умолчанию):
+
+```bash
+python telegram_mcp_server.py --transport http --port 8000
+# обязательный прокси-слой: TLS + auth. Пример через Caddy:
+# caddy reverse-proxy --from tg-mcp.example.com --to localhost:8000
+```
+
+> ВАЖНО: remote-режим — расширенный вариант. Если всем хватает десктопа/CLI — он не нужен. Не выставляйте сервер наружу без HTTPS и токена.
+
 ### Шаг 4. Проверка
 
 ```bash
