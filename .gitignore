@@ -1,0 +1,13 @@
+# Secrets
+.env
+sessions/
+*.session
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
