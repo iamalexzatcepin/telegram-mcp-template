@@ -50,7 +50,10 @@ def load_settings(account: Optional[str] = None) -> tuple[int, str, Path]:
         pass
 
     account = account or os.getenv("TELEGRAM_ACCOUNT") or DEFAULT_ACCOUNT
-    safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", account.strip("@")).strip("_") or "user"
+    safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", account.strip("@")).strip("_")
+    if safe in {"", ".", ".."}:
+        safe = "user"
+    safe = safe[:64]
     session_path = session_dir / f"{safe}.session"
     return int(api_id), api_hash, session_path
 
