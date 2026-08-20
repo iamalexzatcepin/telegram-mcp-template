@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """MCP server: read-only Telegram access (list chats, read chat, search).
 
-Run via stdio (default) so Codex / Claude Code / any MCP client can register it:
-    codex mcp add telegram -- python telegram_mcp_server.py
-    claude mcp add telegram -- python telegram_mcp_server.py
-    claude mcp add telegram -- <abs path to this file>   (Claude Code also accepts the file directly)
+Run via stdio so Codex, Claude Code, desktop apps, and other local MCP
+clients can register it. This template intentionally does not expose a
+network transport: a Telegram user session must stay on the local machine.
 
 All operations are READ-ONLY: the agent can view chats and messages but never
 send anything.
 """
 from __future__ import annotations
 
-import argparse
 import json
 import sys
 from pathlib import Path
@@ -33,6 +31,7 @@ async def list_chats(limit: int = 50, account: str = "default") -> str:
         limit: max number of dialogs to return (default 50).
         account: session name (default 'default').
     """
+    limit = max(1, min(int(limit), 200))
     client = get_client(account)
     await client.start()
     try:
@@ -74,6 +73,7 @@ async def read_chat(chat: str, limit: int = 50, account: str = "default") -> str
                 "sender": display_name(sender) if sender else None,
                 "text": (msg.message or "").strip(),
                 "has_media": bool(msg.media),
+                "outgoing": bool(msg.out),
             })
         rows = list(reversed(rows))
         return json.dumps(rows, ensure_ascii=False, indent=2)
@@ -105,6 +105,7 @@ async def search_chat(chat: str, query: str, limit: int = 50, account: str = "de
                 "sender": display_name(sender) if sender else None,
                 "text": (msg.message or "").strip(),
                 "has_media": bool(msg.media),
+                "outgoing": bool(msg.out),
             })
         rows = list(reversed(rows))
         return json.dumps(rows, ensure_ascii=False, indent=2)
@@ -113,14 +114,4 @@ async def search_chat(chat: str, query: str, limit: int = 50, account: str = "de
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--transport", default="stdio", choices=["stdio", "sse", "http"])
-    ap.add_argument("--host", default="127.0.0.1")
-    ap.add_argument("--port", type=int, default=8000)
-    args = ap.parse_args()
-    if args.transport == "http":
-        mcp.settings.host = args.host
-        mcp.settings.port = args.port
-        mcp.run(transport="streamable-http")
-    else:
-        mcp.run(transport=args.transport)
+    mcp.run(transport="stdio")
