@@ -1,0 +1,7 @@
+interface:
+  display_name: "Telegram — Отправка"
+  short_description: "Черновики, ответы и отправка сообщений"
+  icon_small: "./assets/telegram-logo.svg"
+  icon_large: "./assets/telegram-logo.svg"
+  brand_color: "#229ED9"
+  default_prompt: "Используй $telegram-otpravka и подготовь ответ на сообщение."

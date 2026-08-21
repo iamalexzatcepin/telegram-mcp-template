@@ -1,4 +1,0 @@
-interface:
-  display_name: "Telegram Manage"
-  short_description: "Manage Telegram groups and channels carefully"
-  default_prompt: "Use $telegram-manage to manage a Telegram chat."

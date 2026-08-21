@@ -1,4 +1,0 @@
-interface:
-  display_name: "Telegram Send"
-  short_description: "Draft, send, and schedule Telegram messages"
-  default_prompt: "Use $telegram-send to prepare a Telegram reply."

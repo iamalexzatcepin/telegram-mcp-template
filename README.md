@@ -85,13 +85,15 @@ The project does not support HTTP, SSE, tunnels, or hosted/shared operation.
 
 ## Codex plugin
 
-The bundle is in `codex-plugin/telegram-mcp`. It adds native routing through `@Telegram MCP` and explicit skill-style commands:
+The bundle is in `codex-plugin/telegram-mcp`. It adds native routing through `@Telegram` and explicit skill-style commands with Russian UI labels:
 
 - `$telegram-mcp:telegram`
-- `$telegram-mcp:telegram-setup`
-- `$telegram-mcp:telegram-read`
-- `$telegram-mcp:telegram-send`
-- `$telegram-mcp:telegram-manage`
+- `$telegram-mcp:telegram-chtenie`
+- `$telegram-mcp:telegram-otpravka`
+- `$telegram-mcp:telegram-upravlenie`
+- `$telegram-mcp:telegram-nastroika`
+
+The technical command identifiers use Latin characters for Codex compatibility. Their visible names, descriptions, icons, and starter prompts are in Russian. See [the Russian command guide](codex-plugin/telegram-mcp/docs/commands-ru.md) for when to use each command.
 
 The bundle contains the canonical Python runtime and does not bypass its capability registry. Install it from a local/team marketplace or package it with a release; start a fresh Codex task after installation. The bundle uses `uv` to create an isolated runtime from its own `mcp_server` directory, so it remains self-contained when copied out of this repository.
 

@@ -1,4 +1,7 @@
 interface:
-  display_name: "Telegram"
-  short_description: "Read and manage Telegram with active permissions"
-  default_prompt: "Use $telegram to help with my Telegram request."
+  display_name: "Telegram — Все команды"
+  short_description: "Все действия с учётом разрешений пользователя"
+  icon_small: "./assets/telegram-logo.svg"
+  icon_large: "./assets/telegram-logo.svg"
+  brand_color: "#229ED9"
+  default_prompt: "Используй $telegram и выполни мою задачу в Telegram."

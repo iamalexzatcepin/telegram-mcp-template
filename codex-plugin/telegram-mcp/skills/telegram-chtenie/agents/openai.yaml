@@ -1,0 +1,7 @@
+interface:
+  display_name: "Telegram — Чтение"
+  short_description: "Чтение, поиск и сводки без изменения чатов"
+  icon_small: "./assets/telegram-logo.svg"
+  icon_large: "./assets/telegram-logo.svg"
+  brand_color: "#229ED9"
+  default_prompt: "Используй $telegram-chtenie и сделай сводку непрочитанных сообщений."

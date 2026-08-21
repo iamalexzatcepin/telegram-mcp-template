@@ -1,4 +1,0 @@
-interface:
-  display_name: "Telegram Setup"
-  short_description: "Configure Telegram permissions and local accounts"
-  default_prompt: "Use $telegram-setup to configure Telegram safely."

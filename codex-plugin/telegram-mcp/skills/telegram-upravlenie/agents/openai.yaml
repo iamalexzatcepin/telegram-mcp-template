@@ -1,0 +1,7 @@
+interface:
+  display_name: "Telegram — Управление"
+  short_description: "Группы, каналы и участники с подтверждением"
+  icon_small: "./assets/telegram-logo.svg"
+  icon_large: "./assets/telegram-logo.svg"
+  brand_color: "#229ED9"
+  default_prompt: "Используй $telegram-upravlenie для управления группой или каналом."
