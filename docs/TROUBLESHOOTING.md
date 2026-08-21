@@ -8,6 +8,8 @@ Run `telegram-mcp permissions`. Missing tools are usually intentionally hidden b
 
 Run `telegram-mcp storage --account <name>` and `telegram-mcp diagnostics`. If neither keyring nor encrypted fallback is present, run `telegram-mcp login --account <name>`. If the session was revoked in Telegram, delete the local record with `telegram-mcp logout --account <name> --confirm` and log in again.
 
+For an existing v1 checkout with `sessions/<account>.session`, run `telegram-mcp migrate-v1 --repo <old-checkout> --account <name>`. Migration retains the old session for rollback and never prints credentials or session contents.
+
 ## OS keyring is unavailable
 
 Set `TELEGRAM_MCP_MASTER_KEY` in the local terminal/process environment before login and before starting MCP. The fallback is encrypted and owner-only. Do not place the key in a prompt, commit, shared shell history, or support ticket.

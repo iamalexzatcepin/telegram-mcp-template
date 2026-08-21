@@ -14,6 +14,7 @@ from telethon.sessions import StringSession
 
 from .capabilities import ALL_CAPABILITIES, PROFILE_CAPABILITIES
 from .config import AppConfig, default_config_path, load_config, save_config, secure_account_name
+from .migration import migrate_v1
 from .server import run_server
 from .session_store import (
     MASTER_KEY_ENV,
@@ -170,6 +171,9 @@ def _build_parser() -> argparse.ArgumentParser:
     logout.add_argument("--confirm", action="store_true")
     storage = sub.add_parser("storage", help="Inspect session backend state")
     storage.add_argument("--account")
+    migrate = sub.add_parser("migrate-v1", help="Securely migrate an existing v1 SQLite session")
+    migrate.add_argument("--repo", required=True)
+    migrate.add_argument("--account")
     sub.add_parser("permissions", help="Inspect allowed capabilities and exposed tools")
     sub.add_parser("diagnostics", help="Inspect secret-free runtime state")
     return parser
@@ -192,6 +196,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "storage":
         print(json.dumps(inspect_storage(args.account or load_config().default_account), indent=2))
+        return 0
+    if args.command == "migrate-v1":
+        account = args.account or load_config().default_account
+        print(json.dumps(migrate_v1(Path(args.repo), account, os.getenv(MASTER_KEY_ENV)), indent=2))
         return 0
     if args.command == "permissions":
         print(json.dumps(asyncio.run(inspect_permissions()), indent=2))

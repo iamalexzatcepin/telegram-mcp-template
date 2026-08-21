@@ -107,6 +107,14 @@ telegram-mcp storage --account work
 telegram-mcp logout --account work --confirm
 ```
 
+Existing v1 users can retain their authorization without another Telegram login:
+
+```bash
+telegram-mcp migrate-v1 --repo ~/telegram-mcp --account default
+```
+
+The command restricts the old session to owner-only access, stores a converted session through the v2 keyring/encrypted backend, and retains the source file for rollback.
+
 Every Telegram tool accepts `account`. Account names are normalized before any path or keyring lookup.
 
 ## Storage and cache
