@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "telegram-mcp-v2"
+version = "2.0.0"
+description = "Capability-scoped, local-only Telegram MCP server and Codex plugin"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "iamalexzatcepin" }]
+dependencies = [
+  "cryptography>=42,<46",
+  "keyring>=24,<27",
+  "mcp>=1.12,<2",
+  "telethon>=1.36,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+  "pytest-asyncio>=0.23,<2",
+  "pytest-cov>=5,<7",
+]
+encrypted-cache = ["pysqlcipher3>=1.2.0"]
+
+[project.scripts]
+telegram-mcp = "telegram_mcp.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["codex-plugin/telegram-mcp/mcp_server/src/telegram_mcp"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+asyncio_mode = "auto"
+pythonpath = ["codex-plugin/telegram-mcp/mcp_server/src"]
+testpaths = ["tests"]

@@ -1,3 +1,4 @@
-mcp>=1.0,<2
+cryptography>=42,<46
+keyring>=24,<27
+mcp>=1.12,<2
 telethon>=1.36,<2
-python-dotenv>=1.0,<2

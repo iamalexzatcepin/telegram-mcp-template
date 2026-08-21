@@ -1,49 +1,16 @@
-# Несколько Telegram-аккаунтов
+# Multiple Telegram accounts
 
-Один MCP-сервер может использовать несколько локальных Telethon-сессий. У всех
-аккаунтов используются `TELEGRAM_API_ID` и `TELEGRAM_API_HASH` из одного `.env`,
-а авторизация хранится в отдельных файлах `sessions/<account>.session`.
-
-Сначала полностью настройте и проверьте аккаунт `default`.
-
-## Добавить аккаунт
-
-Выберите короткое имя латиницей без пробелов, например `work` или `personal`.
-
-macOS/Linux:
+Add each account with a local name:
 
 ```bash
-cd ~/telegram-mcp
-.venv/bin/python login.py --account work
+telegram-mcp setup
+telegram-mcp login --account work
+telegram-mcp login --account personal
+telegram-mcp storage --account work
 ```
 
-Windows PowerShell:
+The wizard records available names and a default. Every MCP operation also accepts `account`, for example `search_chat(chat="@example", query="contract", account="work")`.
 
-```powershell
-cd "$env:USERPROFILE\telegram-mcp"
-.\.venv\Scripts\python.exe login.py --account work
-```
+Each account has a separate keyring record or encrypted fallback file and a separate cache database. Account identifiers are normalized and cannot escape the application directories.
 
-Введите номер телефона, код и облачный пароль в терминале. Не отправляйте их
-ИИ-агенту. Перезапускать или повторно регистрировать MCP-сервер не нужно.
-
-## Использование
-
-Передавайте имя сессии в параметре `account`:
-
-```text
-list_chats(limit=10, account="work")
-read_chat(chat="@example", limit=20, account="work")
-search_chat(chat="@example", query="договор", account="work")
-```
-
-Всегда называйте аккаунт явно, если запрос может быть неоднозначным. Не
-объединяйте переписки разных аккаунтов без прямой просьбы пользователя.
-
-## Безопасность
-
-- каждый `.session` фактически даёт доступ к соответствующему аккаунту;
-- не копируйте сессии на чужие устройства и не добавляйте их в Git;
-- не запускайте параллельно несколько операций с одним файлом сессии;
-- для удаления аккаунта сначала закройте MCP-клиенты, затем самостоятельно
-  переместите соответствующий `.session` в безопасное резервное место.
+Do not run concurrent mutations against the same account unless the calling workflow knows Telegram ordering semantics. If an account session may be compromised, revoke it in Telegram `Settings → Devices`, run `telegram-mcp logout --account <name> --confirm`, and log in again.

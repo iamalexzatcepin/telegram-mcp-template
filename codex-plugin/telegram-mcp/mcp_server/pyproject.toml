@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "telegram-mcp-v2"
+version = "2.0.0"
+description = "Capability-scoped local Telegram MCP runtime"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "iamalexzatcepin" }]
+dependencies = [
+  "cryptography>=42,<46",
+  "keyring>=24,<27",
+  "mcp>=1.12,<2",
+  "telethon>=1.36,<2",
+]
+
+[project.optional-dependencies]
+encrypted-cache = ["pysqlcipher3>=1.2.0"]
+
+[project.scripts]
+telegram-mcp = "telegram_mcp.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/telegram_mcp"]

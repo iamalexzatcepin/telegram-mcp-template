@@ -50,27 +50,16 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 & $venvPython -m pip install --quiet --upgrade pip
-& $venvPython -m pip install --quiet -r requirements.txt
-
-if (-not (Test-Path ".env")) {
-    Copy-Item ".env.example" ".env"
-    Write-Host ""
-    Write-Host "A local .env file was created." -ForegroundColor Yellow
-    Write-Host "Open it and fill TELEGRAM_API_ID and TELEGRAM_API_HASH from https://my.telegram.org."
-    Write-Host "Do not paste API_HASH into an AI chat. Then run setup.ps1 again."
-    exit 2
-}
-
-$envText = Get-Content ".env" -Raw
-if ($envText -notmatch '(?m)^TELEGRAM_API_ID=\d+\s*$' -or
-    $envText -notmatch '(?m)^TELEGRAM_API_HASH=[0-9A-Fa-f]{32}\s*$') {
-    throw "The .env file does not contain a valid TELEGRAM_API_ID and TELEGRAM_API_HASH. Edit it locally; secret values will not be printed."
-}
+& $venvPython -m pip install --quiet -e .
 
 Write-Host ""
-Write-Host "==> Logging in to Telegram (first time only)" -ForegroundColor Cyan
-Write-Host "    You will be asked for your phone number and the login code."
-& $venvPython login.py --account default
+Write-Host "==> Choosing permissions" -ForegroundColor Cyan
+& ".venv\Scripts\telegram-mcp.exe" setup
+
+Write-Host ""
+Write-Host "==> Logging in locally" -ForegroundColor Cyan
+Write-Host "    API hash, login code, and 2FA are entered only in this terminal."
+& ".venv\Scripts\telegram-mcp.exe" login
 
 $py = (Resolve-Path ".venv\Scripts\python.exe").Path
 $server = (Resolve-Path "telegram_mcp_server.py").Path
@@ -88,3 +77,5 @@ Write-Host "                   args:     [$server]"
 Write-Host ""
 Write-Host "  Claude Code CLI:  claude mcp add --transport stdio --scope user telegram -- `"$py`" `"$server`""
 Write-Host "  Codex CLI:        codex mcp add telegram -- $py `"$server`""
+Write-Host ""
+Write-Host "Inspect exact permissions: .venv\Scripts\telegram-mcp.exe permissions"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Telegram"
+  short_description: "Read and manage Telegram with active permissions"
+  default_prompt: "Use $telegram to help with my Telegram request."

@@ -1,0 +1,32 @@
+{
+  "name": "telegram-mcp",
+  "version": "2.0.0",
+  "description": "Capability-scoped local Telegram MCP plugin.",
+  "author": {
+    "name": "iamalexzatcepin",
+    "url": "https://github.com/iamalexzatcepin"
+  },
+  "homepage": "https://github.com/iamalexzatcepin/telegram-mcp-template",
+  "repository": "https://github.com/iamalexzatcepin/telegram-mcp-template",
+  "license": "MIT",
+  "keywords": ["telegram", "mcp", "privacy", "productivity"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Telegram MCP",
+    "shortDescription": "Telegram with user-selected local permissions",
+    "longDescription": "Read, search, analyze, draft, send, and manage Telegram through a local STDIO MCP server that exposes only the capabilities selected by the user.",
+    "developerName": "iamalexzatcepin",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write", "Configurable"],
+    "websiteURL": "https://github.com/iamalexzatcepin/telegram-mcp-template",
+    "privacyPolicyURL": "https://github.com/iamalexzatcepin/telegram-mcp-template/blob/main/codex-plugin/telegram-mcp/docs/privacy.md",
+    "termsOfServiceURL": "https://github.com/iamalexzatcepin/telegram-mcp-template/blob/main/codex-plugin/telegram-mcp/docs/terms.md",
+    "defaultPrompt": [
+      "Summarize my unread Telegram",
+      "Search my Telegram messages",
+      "Draft a Telegram reply"
+    ],
+    "brandColor": "#229ED9"
+  },
+  "mcpServers": "./.mcp.json"
+}

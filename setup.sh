@@ -46,32 +46,18 @@ if ! .venv/bin/python -c 'import sys; raise SystemExit(0 if sys.version_info >= 
   exit 1
 fi
 
-echo "==> Installing dependencies (telethon, mcp, python-dotenv)"
+echo "==> Installing Telegram MCP v2"
 .venv/bin/python -m pip install --quiet --upgrade pip
-.venv/bin/python -m pip install --quiet -r requirements.txt
-
-if [ ! -f .env ]; then
-  cp .env.example .env
-  chmod 600 .env
-  echo ""
-  echo "A local .env file was created."
-  echo "Open it and fill TELEGRAM_API_ID and TELEGRAM_API_HASH from https://my.telegram.org."
-  echo "Do not paste API_HASH into an AI chat. Then run bash setup.sh again."
-  exit 2
-fi
-
-chmod 600 .env
-if ! grep -Eq '^TELEGRAM_API_ID=[0-9]+[[:space:]]*$' .env || \
-   ! grep -Eq '^TELEGRAM_API_HASH=[0-9A-Fa-f]{32}[[:space:]]*$' .env; then
-  echo "The .env file does not contain a valid TELEGRAM_API_ID and TELEGRAM_API_HASH." >&2
-  echo "Edit .env locally. Secret values will not be printed." >&2
-  exit 2
-fi
+.venv/bin/python -m pip install --quiet -e .
 
 echo ""
-echo "==> Logging in to Telegram (first time only)"
-echo "    You will be asked for your phone number and the login code."
-.venv/bin/python login.py --account default
+echo "==> Choosing permissions"
+.venv/bin/telegram-mcp setup
+
+echo ""
+echo "==> Logging in locally"
+echo "    API hash, login code, and 2FA are entered only in this terminal."
+.venv/bin/telegram-mcp login
 
 PYTHON_PATH="$(pwd)/.venv/bin/python"
 SERVER_PATH="$(pwd)/telegram_mcp_server.py"
@@ -82,4 +68,5 @@ echo ""
 echo "  Codex:       codex mcp add telegram -- \"$PYTHON_PATH\" \"$SERVER_PATH\""
 echo "  Claude Code: claude mcp add --transport stdio --scope user telegram -- \"$PYTHON_PATH\" \"$SERVER_PATH\""
 echo ""
-echo "See README.md for desktop apps and other MCP clients."
+echo "Run '.venv/bin/telegram-mcp permissions' to inspect the exact exposed tools."
+echo "See README.md for the Codex plugin and other MCP clients."

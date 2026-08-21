@@ -1,74 +1,29 @@
-# Диагностика
+# Troubleshooting
 
-## Python 3.10 or newer was not found
+## A requested tool is missing
 
-Установите актуальный Python с [python.org](https://www.python.org/downloads/).
-На macOS/Linux можно явно выбрать его:
+Run `telegram-mcp permissions`. Missing tools are usually intentionally hidden by the active capability profile. Rerun `telegram-mcp setup`, restart the MCP process, and open a fresh agent task. Do not add an alternate write server to work around the profile.
 
-```bash
-PYTHON_BIN=python3.11 bash setup.sh
-```
+## No session or unauthorized account
 
-## Existing `.venv` uses an unsupported Python
+Run `telegram-mcp storage --account <name>` and `telegram-mcp diagnostics`. If neither keyring nor encrypted fallback is present, run `telegram-mcp login --account <name>`. If the session was revoked in Telegram, delete the local record with `telegram-mcp logout --account <name> --confirm` and log in again.
 
-Не удаляйте окружение вслепую. Переименуйте `.venv`, повторите setup и удалите
-резервную копию только после успешной проверки.
+## OS keyring is unavailable
 
-## `.env` is invalid
+Set `TELEGRAM_MCP_MASTER_KEY` in the local terminal/process environment before login and before starting MCP. The fallback is encrypted and owner-only. Do not place the key in a prompt, commit, shared shell history, or support ticket.
 
-Откройте `.env` локально. `TELEGRAM_API_ID` должен быть числом, а
-`TELEGRAM_API_HASH` — 32 шестнадцатеричных символа. Не публикуйте значения.
+## Encrypted cache will not open
 
-## Код Telegram не приходит
+Encrypted cache intentionally fails closed. Install the `encrypted-cache` extra with a working SQLCipher build and set `TELEGRAM_MCP_CACHE_KEY`, or rerun setup and disable the cache. The server will not downgrade an encrypted-cache request to plaintext.
 
-Проверьте сообщения от официального аккаунта Telegram на уже авторизованных
-устройствах. Код может прийти туда, а не по SMS. Не передавайте код агенту.
+## Media upload is rejected
 
-## `AUTH_KEY_UNREGISTERED` или повреждённая сессия
+Set `TELEGRAM_MCP_UPLOAD_DIR` to a dedicated directory and move the intended file inside it. Arbitrary paths and symlink escapes are rejected to prevent accidental local-file disclosure.
 
-Закройте все MCP-клиенты. Сначала переместите нужный файл `.session` в резервную
-папку, затем повторите `login.py --account <name>`. Не удаляйте все сессии сразу.
+## MCP starts but Telegram calls fail
 
-## `database is locked`
+Check that the selected `account` is configured and logged in, then run diagnostics. Telegram may also return flood-wait or permission errors for operations the account cannot perform. Do not repeatedly retry destructive or rate-limited calls.
 
-Один файл Telethon-сессии уже открыт другим процессом. Закройте Claude, Codex и
-другие клиенты, подождите несколько секунд и попробуйте снова. Не запускайте два
-MCP-сервера одновременно для одного `account`.
+## Plugin appears stale
 
-## Клиент видит сервер, но не видит инструменты
-
-1. Проверьте `codex mcp get telegram` или `claude mcp get telegram`.
-2. Убедитесь, что Command указывает на Python внутри `.venv`.
-3. Убедитесь, что Arguments содержит абсолютный путь к серверу.
-4. Полностью перезапустите приложение.
-5. Откройте новый чат/сеанс и проверьте `/mcp`.
-
-Не включайте полный доступ к системе как стандартное решение. Сначала проверьте
-пути, разрешение запуска локального процесса и настройки конкретного клиента.
-
-## Работает в CLI, но не в Desktop
-
-Claude Code и Claude Desktop используют разные способы конфигурации. Настройка
-Claude Code не гарантирует автоматическое появление сервера в Claude Desktop.
-
-У локальных Codex-клиентов конфигурация может быть общей для одного Codex-хоста,
-но открытая сессия всё равно требует перезапуска или нового чата.
-
-## Не работает в браузере или на телефоне
-
-Это ожидаемо: локальный STDIO-процесс доступен только приложениям на том же
-компьютере. Этот шаблон намеренно не поддерживает публичный remote MCP.
-
-## Чат не найден по имени
-
-Сначала вызовите `list_chats`, найдите точное название или `ref`, и только затем
-читайте чат. Не подменяйте похожий контакт без подтверждения пользователя.
-
-## Нужно проверить сам сервер
-
-```bash
-.venv/bin/python -m unittest discover -s tests -v
-```
-
-Не запускайте `telegram_mcp_server.py` вручную для визуальной проверки: STDIO
-сервер ожидает MCP-клиент и обычно ничего не печатает.
+Reinstall or update the local plugin bundle, restart Codex, and start a fresh task. Installed tasks can retain an older skill/tool schema even after the config changes.

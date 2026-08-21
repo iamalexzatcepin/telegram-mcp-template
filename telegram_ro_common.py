@@ -1,85 +1,26 @@
-#!/usr/bin/env python3
-"""Read-only Telegram MTProto helpers for the Telegram MCP template.
-
-Secrets are loaded from .env next to this file (or environment variables).
-This module intentionally exposes only read/list/search helpers.
-"""
+"""Deprecated v1 import shim backed by the secure v2 session store."""
 from __future__ import annotations
 
-import os
-import re
 import sys
 from pathlib import Path
-from typing import Optional
 
-from dotenv import load_dotenv
+sys.path.insert(
+    0,
+    str(Path(__file__).resolve().parent / "codex-plugin" / "telegram-mcp" / "mcp_server" / "src"),
+)
+
 from telethon import TelegramClient
+from telethon.sessions import StringSession
 
-# Config files searched in order: .env next to this file, then env vars.
-BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_SESSION_DIR = BASE_DIR / "sessions"
-DEFAULT_ACCOUNT = "default"
-
-
-def load_settings(account: Optional[str] = None) -> tuple[int, str, Path]:
-    # Prefer explicit env vars, then .env file in repo dir.
-    load_dotenv(BASE_DIR / ".env", override=False)
-
-    api_id = os.getenv("TELEGRAM_API_ID")
-    api_hash = os.getenv("TELEGRAM_API_HASH")
-
-    # Fallback for local machines that already have Hermes-style secrets.
-    if not api_id or not api_hash:
-        hermes_secret = Path("/root/.hermes/secret.env")
-        if hermes_secret.exists():
-            load_dotenv(hermes_secret, override=False)
-            api_id = api_id or os.getenv("TELEGRAM_API_ID")
-            api_hash = api_hash or os.getenv("TELEGRAM_API_HASH")
-
-    if not api_id or not api_hash:
-        raise RuntimeError(
-            "Missing TELEGRAM_API_ID / TELEGRAM_API_HASH. "
-            "Copy .env.example to .env and fill in your values (from my.telegram.org)."
-        )
-
-    session_dir = Path(os.getenv("TELEGRAM_SESSION_DIR", str(DEFAULT_SESSION_DIR)))
-    session_dir.mkdir(parents=True, exist_ok=True)
-    try:
-        session_dir.chmod(0o700)
-    except OSError:
-        pass
-
-    account = account or os.getenv("TELEGRAM_ACCOUNT") or DEFAULT_ACCOUNT
-    safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", account.strip("@")).strip("_")
-    if safe in {"", ".", ".."}:
-        safe = "user"
-    safe = safe[:64]
-    session_path = session_dir / f"{safe}.session"
-    return int(api_id), api_hash, session_path
+from telegram_mcp.session_store import load_session
+from telegram_mcp.tools.common import display_name
 
 
-def get_client(account: Optional[str] = None) -> TelegramClient:
-    api_id, api_hash, session_path = load_settings(account)
-    return TelegramClient(str(session_path), api_id, api_hash)
-
-
-def display_name(entity) -> str:
-    title = getattr(entity, "title", None)
-    if title:
-        return title
-    first = getattr(entity, "first_name", None) or ""
-    last = getattr(entity, "last_name", None) or ""
-    username = getattr(entity, "username", None)
-    name = (first + " " + last).strip()
-    if name:
-        return name
-    if username:
-        return "@" + username
-    return str(getattr(entity, "id", "unknown"))
+def get_client(account: str = "default") -> TelegramClient:
+    stored = load_session(account)
+    return TelegramClient(StringSession(stored.session_string), stored.api_id, stored.api_hash)
 
 
 def chat_ref(entity) -> str:
     username = getattr(entity, "username", None)
-    if username:
-        return "@" + username
-    return str(getattr(entity, "id", "unknown"))
+    return f"@{username}" if username else str(getattr(entity, "id", "unknown"))

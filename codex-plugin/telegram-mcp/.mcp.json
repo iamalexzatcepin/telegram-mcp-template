@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "telegram_local": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--project", "./mcp_server", "telegram-mcp", "serve"],
+      "cwd": "./",
+      "env_vars": [
+        "TELEGRAM_MCP_CONFIG",
+        "TELEGRAM_MCP_CONFIG_DIR",
+        "TELEGRAM_MCP_MASTER_KEY",
+        "TELEGRAM_MCP_CACHE_KEY",
+        "TELEGRAM_MCP_DOWNLOAD_DIR",
+        "TELEGRAM_MCP_UPLOAD_DIR",
+        "XDG_CONFIG_HOME"
+      ],
+      "startup_timeout_sec": 20,
+      "tool_timeout_sec": 90
+    }
+  }
+}

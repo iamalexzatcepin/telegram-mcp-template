@@ -11,6 +11,11 @@ venv/
 .coverage
 htmlcov/
 .pytest_cache/
+coverage.xml
+dist/
+build/
+work/
+*.egg-info/
 
 # OS
 .DS_Store

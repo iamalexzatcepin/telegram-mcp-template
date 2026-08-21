@@ -1,0 +1,4 @@
+interface:
+  display_name: "Telegram Read"
+  short_description: "Read, search, and summarize Telegram safely"
+  default_prompt: "Use $telegram-read to summarize my unread Telegram."

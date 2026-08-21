@@ -1,187 +1,74 @@
-# Telegram MCP — локальный read-only доступ для ИИ-агентов
+# Telegram MCP v2
 
-Локальный MCP-сервер даёт Codex, Claude и другим MCP-клиентам три инструмента:
+Production-oriented local Telegram access for Codex, Claude, and any STDIO-compatible MCP client. The user chooses capabilities; the server physically registers only tools allowed by the active configuration. Missing configuration means `read-only`.
 
-| Инструмент | Назначение |
-|---|---|
-| `list_chats(limit, account)` | Список чатов и количество непрочитанных |
-| `read_chat(chat, limit, account)` | Последние сообщения выбранного чата |
-| `search_chat(chat, query, limit, account)` | Поиск текста в выбранном чате |
+## Profiles
 
-Сервер работает **только на чтение**. В коде нет инструментов отправки,
-редактирования или удаления сообщений. Сервер запускается локально через
-STDIO и намеренно не предоставляет сетевой HTTP/SSE-доступ.
+| Profile | Intended use | Capabilities |
+|---|---|---|
+| `read-only` | safest default | dialogs, messages, unread, context, live search, local activity analysis |
+| `assistant` | daily personal assistant | read-only plus cache, send/reply, forward, reactions, read-state, drafts, scheduling, media, polls |
+| `power-user` | full local Telegram control | every capability, including edit/delete and group/channel management |
+| `custom` | least-privilege workflows | exact capabilities selected by the user |
 
-## Поддерживаемые клиенты
+Profiles are convenience presets. `capabilities` and `denied_capabilities` provide per-capability overrides. Diagnostics are always available and secret-free.
 
-- ChatGPT/Codex Desktop;
-- Codex CLI и IDE extension;
-- Claude Code;
-- Claude Desktop;
-- любой локальный MCP-клиент с поддержкой STDIO.
+## What is included
 
-Локальный сервер не работает напрямую в `chatgpt.com`, `claude.ai`, на телефоне
-или на другом компьютере: эти среды не могут запустить процесс на вашей машине.
+- Read, unread, context, per-chat search, global search, and deterministic activity statistics.
+- Optional account-scoped SQLite cache with fail-closed SQLCipher mode.
+- Send, reply, edit, delete, forward, reactions, mark-as-read, pin/unpin, drafts, scheduled messages, media, and polls.
+- Basic group/channel creation, invitations, title changes, member removal, and leaving.
+- Exact-target confirmation guard for destructive calls.
+- OS-keyring-first Telethon `StringSession` storage with encrypted atomic owner-only fallback.
+- Multiple named accounts across every tool.
+- Setup wizard, permission inspection, diagnostics, generic STDIO entrypoint, and Codex plugin skills.
 
-## Что понадобится
+## Quick install
 
-- Windows 10/11, macOS или Linux;
-- [Git](https://git-scm.com/downloads);
-- [Python 3.10+](https://www.python.org/downloads/);
-- хотя бы один поддерживаемый MCP-клиент.
-
-## Установка для новичка
-
-### 1. Откройте терминал
-
-- **macOS:** `Command + Space` → введите `Terminal` → Enter.
-- **Windows:** меню «Пуск» → введите `PowerShell` → откройте PowerShell.
-- **Linux:** нажмите `Ctrl + Alt + T` или откройте приложение Terminal.
-
-### 2. Скачайте проект
+Requirements: Python 3.10+, Git, and a Telegram user account. Installing the self-contained Codex plugin bundle directly also requires `uv`.
 
 macOS/Linux:
 
 ```bash
 git clone https://github.com/iamalexzatcepin/telegram-mcp-template.git ~/telegram-mcp
 cd ~/telegram-mcp
-```
-
-Windows PowerShell:
-
-```powershell
-git clone https://github.com/iamalexzatcepin/telegram-mcp-template.git "$env:USERPROFILE\telegram-mcp"
-cd "$env:USERPROFILE\telegram-mcp"
-```
-
-Если GitHub сообщает, что репозиторий не найден, у вашей учётной записи пока
-нет доступа к приватному репозиторию.
-
-### 3. Получите Telegram API ID и API Hash
-
-1. Откройте [my.telegram.org](https://my.telegram.org).
-2. Войдите по номеру телефона.
-3. Откройте **API development tools**.
-4. Создайте приложение, например `Local Telegram MCP`.
-5. Сохраните `api_id` и `api_hash`.
-
-Не отправляйте `api_hash`, код входа или облачный пароль в чат с ИИ.
-
-Создайте локальный `.env`.
-
-macOS/Linux:
-
-```bash
-cp .env.example .env
-nano .env
-```
-
-Сохранение в Nano: `Ctrl + O` → Enter → `Ctrl + X`.
-
-Windows PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-notepad .env
-```
-
-Заполните файл локально:
-
-```dotenv
-TELEGRAM_API_ID=ваш_api_id
-TELEGRAM_API_HASH=ваш_api_hash
-```
-
-### 4. Установите зависимости и войдите в Telegram
-
-macOS/Linux:
-
-```bash
 bash setup.sh
 ```
 
 Windows PowerShell:
 
 ```powershell
+git clone https://github.com/iamalexzatcepin/telegram-mcp-template.git "$env:USERPROFILE\telegram-mcp"
+Set-Location "$env:USERPROFILE\telegram-mcp"
 powershell -ExecutionPolicy Bypass -File setup.ps1
 ```
 
-Скрипт сам найдёт Python 3.10+, создаст `.venv`, установит зависимости и
-попросит номер телефона, код из Telegram и, если включён, облачный пароль.
-Вводите их только в своём терминале.
+The setup script installs an isolated environment, opens the profile wizard, and runs local Telegram login. Obtain your own `api_id` and `api_hash` from [my.telegram.org](https://my.telegram.org). Enter API hash, login code, 2FA password, session material, and encryption keys only in the local terminal—never in an AI chat.
 
-## Подключение к агенту
+For AI-guided installation, copy the prompt in [docs/INSTALL_WITH_AI.md](docs/INSTALL_WITH_AI.md).
 
-Во всех примерах используйте абсолютные пути, которые напечатает setup-скрипт.
-Команда — это Python внутри `.venv`, аргумент — `telegram_mcp_server.py`.
-
-### Codex CLI и ChatGPT/Codex Desktop
-
-macOS/Linux:
+## Inspect before connecting
 
 ```bash
-codex mcp add telegram -- "$HOME/telegram-mcp/.venv/bin/python" "$HOME/telegram-mcp/telegram_mcp_server.py"
-codex mcp get telegram
+.venv/bin/telegram-mcp permissions
+.venv/bin/telegram-mcp diagnostics
 ```
 
-Windows PowerShell:
+On Windows use `.venv\Scripts\telegram-mcp.exe`.
 
-```powershell
-codex mcp add telegram -- "$env:USERPROFILE\telegram-mcp\.venv\Scripts\python.exe" "$env:USERPROFILE\telegram-mcp\telegram_mcp_server.py"
-codex mcp get telegram
-```
+Changing the profile changes the MCP schema. Restart the server and start a fresh agent task after every capability change.
 
-В ChatGPT/Codex Desktop также можно открыть `Settings → MCP servers → Add
-server`, выбрать STDIO и указать те же Command и Arguments. После сохранения
-нажмите Restart. Локальные клиенты одного Codex-хоста используют конфигурацию
-`~/.codex/config.toml` совместно.
+## Generic MCP clients
 
-### Claude Code
-
-macOS/Linux:
+The compatibility entrypoint remains `telegram_mcp_server.py` and always uses STDIO:
 
 ```bash
-claude mcp add --transport stdio --scope user telegram -- "$HOME/telegram-mcp/.venv/bin/python" "$HOME/telegram-mcp/telegram_mcp_server.py"
-claude mcp get telegram
+codex mcp add telegram -- "$PWD/.venv/bin/python" "$PWD/telegram_mcp_server.py"
+claude mcp add --transport stdio --scope user telegram -- "$PWD/.venv/bin/python" "$PWD/telegram_mcp_server.py"
 ```
 
-Windows PowerShell:
-
-```powershell
-claude mcp add --transport stdio --scope user telegram -- "$env:USERPROFILE\telegram-mcp\.venv\Scripts\python.exe" "$env:USERPROFILE\telegram-mcp\telegram_mcp_server.py"
-claude mcp get telegram
-```
-
-Запустите новый сеанс Claude Code и введите `/mcp`. Область `user` делает
-сервер доступным в разных локальных проектах этого пользователя.
-
-### Claude Desktop
-
-Откройте настройки Developer/MCP и добавьте локальный STDIO-сервер. Если ваша
-версия Claude Desktop использует JSON-конфигурацию, добавьте объект, сохранив
-остальные серверы:
-
-```json
-{
-  "mcpServers": {
-    "telegram": {
-      "command": "/absolute/path/to/telegram-mcp/.venv/bin/python",
-      "args": ["/absolute/path/to/telegram-mcp/telegram_mcp_server.py"]
-    }
-  }
-}
-```
-
-Типовые расположения файла:
-
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`;
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`.
-
-Полностью перезапустите Claude Desktop и откройте новый чат.
-
-### Другой STDIO MCP-клиент
-
-Используйте эквивалентную конфигурацию:
+Equivalent JSON:
 
 ```json
 {
@@ -194,62 +81,47 @@ claude mcp get telegram
 }
 ```
 
-## Финальная проверка
+The project does not support HTTP, SSE, tunnels, or hosted/shared operation.
 
-Попросите агента:
+## Codex plugin
 
-> Используй telegram `list_chats` с limit=10 и покажи название, тип и число
-> непрочитанных сообщений.
+The bundle is in `codex-plugin/telegram-mcp`. It adds native routing through `@Telegram MCP` and explicit skill-style commands:
 
-Не считайте установку завершённой, пока агент действительно не вернул список
-ваших чатов.
+- `$telegram-mcp:telegram`
+- `$telegram-mcp:telegram-setup`
+- `$telegram-mcp:telegram-read`
+- `$telegram-mcp:telegram-send`
+- `$telegram-mcp:telegram-manage`
 
-## Несколько аккаунтов
+The bundle contains the canonical Python runtime and does not bypass its capability registry. Install it from a local/team marketplace or package it with a release; start a fresh Codex task after installation. The bundle uses `uv` to create an isolated runtime from its own `mcp_server` directory, so it remains self-contained when copied out of this repository.
 
-Сервер поддерживает отдельные локальные сессии `default`, `work`, `personal` и
-другие. Инструкция находится в [docs/MULTI_ACCOUNT.md](docs/MULTI_ACCOUNT.md).
+## Configuration and accounts
 
-## Инструкция для ИИ-агента
-
-Если установку выполняет Codex, Claude или другой агент, попросите его полностью
-прочитать [docs/AGENT_SETUP.md](docs/AGENT_SETUP.md) и следовать ей по одному
-шагу. В этом файле зафиксированы правила безопасности и развилки для разных ОС.
-
-## Безопасность и ограничения
-
-- `.env` и `sessions/` исключены из Git;
-- файл `.session` даёт доступ к аккаунту — не копируйте и не публикуйте его;
-- медиафайлы не скачиваются, возвращается только признак `has_media`;
-- запросы к Telegram выполняются от имени вашего аккаунта и подчиняются лимитам Telegram;
-- не запускайте две операции с одной `.session` одновременно;
-- не выставляйте этот сервер в интернет.
-
-Подробнее: [SECURITY.md](SECURITY.md).
-
-## Если что-то не работает
-
-См. [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
-
-## Разработка
+Default config: `~/.config/telegram-mcp-v2/config.json` (or `%APPDATA%\telegram-mcp-v2\config.json` on Windows). Override with `TELEGRAM_MCP_CONFIG` or `TELEGRAM_MCP_CONFIG_DIR`.
 
 ```bash
-.venv/bin/python -m unittest discover -s tests -v
+telegram-mcp setup
+telegram-mcp login --account work
+telegram-mcp login --account personal
+telegram-mcp storage --account work
+telegram-mcp logout --account work --confirm
 ```
 
-Структура проекта:
+Every Telegram tool accepts `account`. Account names are normalized before any path or keyring lookup.
 
-| Файл | Назначение |
-|---|---|
-| `telegram_mcp_server.py` | Три read-only MCP-инструмента, STDIO only |
-| `telegram_ro_common.py` | Загрузка настроек и локальных сессий Telethon |
-| `login.py` | Вход и создание именованной сессии |
-| `setup.sh` | Установка на macOS/Linux |
-| `setup.ps1` | Установка на Windows |
-| `docs/AGENT_SETUP.md` | Пошаговый протокол для ИИ-агентов |
-| `docs/MULTI_ACCOUNT.md` | Подключение нескольких аккаунтов |
-| `docs/TROUBLESHOOTING.md` | Диагностика типовых проблем |
+## Storage and cache
 
-## Лицензия
+Session storage tries the operating-system keyring first. When no usable keyring exists, set `TELEGRAM_MCP_MASTER_KEY` locally before login and before starting MCP; the encrypted fallback is never written plaintext.
 
-[MIT](LICENSE) — проект можно использовать, изменять и распространять с
-сохранением уведомления об авторских правах и текста лицензии.
+Cache is disabled by default. Enable it through setup. Encrypted cache additionally requires the `encrypted-cache` extra, a working SQLCipher build, and `TELEGRAM_MCP_CACHE_KEY`. If any encryption dependency is missing, the server refuses to open the cache instead of downgrading.
+
+Media uploads require `TELEGRAM_MCP_UPLOAD_DIR`; arbitrary filesystem paths are rejected. Downloads use `TELEGRAM_MCP_DOWNLOAD_DIR` or the private application config directory.
+
+## Development
+
+```bash
+python -m pip install -e '.[dev]'
+pytest
+```
+
+Architecture and audit: [docs/AUDIT_AND_ARCHITECTURE_V2.md](docs/AUDIT_AND_ARCHITECTURE_V2.md). Security model: [SECURITY.md](SECURITY.md).
