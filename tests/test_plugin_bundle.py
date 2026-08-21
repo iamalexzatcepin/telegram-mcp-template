@@ -11,7 +11,7 @@ def test_plugin_manifest_and_runtime_are_self_contained():
     mcp = json.loads((PLUGIN / ".mcp.json").read_text(encoding="utf-8"))
     server = mcp["mcpServers"]["telegram"]
     assert manifest["name"] == "telegram-mcp"
-    assert manifest["version"] == "2.0.0"
+    assert manifest["version"] == "2.1.0"
     assert manifest["mcpServers"] == "./.mcp.json"
     assert manifest["interface"]["displayName"] == "Telegram"
     assert manifest["interface"]["composerIcon"] == "./assets/telegram-logo.svg"

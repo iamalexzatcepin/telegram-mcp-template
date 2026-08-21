@@ -2,7 +2,7 @@
 
 ## A requested tool is missing
 
-Run `telegram-mcp permissions`. Missing tools are usually intentionally hidden by the active capability profile. Rerun `telegram-mcp setup`, restart the MCP process, and open a fresh agent task. Do not add an alternate write server to work around the profile.
+Run `telegram-mcp permissions`. Missing tools are usually intentionally hidden by the active capability profile. Enable a narrow missing permission with `telegram-mcp capabilities enable <name>`, or rerun `telegram-mcp setup` for a complete profile change. Restart the MCP process and open a fresh agent task. Do not add an alternate write server to work around the profile.
 
 ## No session or unauthorized account
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import getpass
 import json
 import os
@@ -13,7 +13,7 @@ from telethon import TelegramClient
 from telethon.sessions import StringSession
 
 from .capabilities import ALL_CAPABILITIES, PROFILE_CAPABILITIES
-from .config import AppConfig, default_config_path, load_config, save_config, secure_account_name
+from .config import AppConfig, ConfigError, default_config_path, load_config, save_config, secure_account_name
 from .migration import migrate_v1
 from .server import run_server
 from .session_store import (
@@ -99,6 +99,47 @@ def setup_wizard(args: argparse.Namespace) -> int:
     return 0
 
 
+def change_capabilities(args: argparse.Namespace) -> int:
+    """Enable or disable individual capabilities without resetting accounts or profiles."""
+    path = Path(args.config).expanduser() if args.config else None
+    config = load_config(path)
+    selected = set(args.capability)
+    if args.capability_action == "enable" and "cache" in selected and not config.cache_enabled:
+        raise ConfigError("Enable cache through `telegram-mcp setup` so storage encryption is explicit")
+
+    capabilities = set(config.capabilities)
+    denied = set(config.denied_capabilities)
+    if args.capability_action == "enable":
+        capabilities.update(selected)
+        denied.difference_update(selected)
+    else:
+        capabilities.difference_update(selected)
+        denied.update(selected)
+
+    updated = replace(
+        config,
+        capabilities=tuple(sorted(capabilities)),
+        denied_capabilities=tuple(sorted(denied)),
+    ).normalized()
+    target = save_config(updated, path)
+    print(
+        json.dumps(
+            {
+                "ok": True,
+                "action": args.capability_action,
+                "changed": sorted(selected),
+                "config": str(target),
+                "profile": updated.profile,
+                "allowed_capabilities": sorted(updated.resolved_capabilities()),
+                "restart_required": True,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    return 0
+
+
 async def login(account: str) -> int:
     safe = secure_account_name(account)
     api_id_raw = os.getenv("TELEGRAM_API_ID") or input("Telegram API ID: ").strip()
@@ -164,6 +205,16 @@ def _build_parser() -> argparse.ArgumentParser:
     setup.add_argument("--config")
     setup.add_argument("--non-interactive", action="store_true")
 
+    capabilities = sub.add_parser(
+        "capabilities", help="Safely enable or disable individual capabilities"
+    )
+    capability_actions = capabilities.add_subparsers(dest="capability_action", required=True)
+    configurable = sorted(ALL_CAPABILITIES - {"diagnostics"})
+    for action in ("enable", "disable"):
+        command = capability_actions.add_parser(action)
+        command.add_argument("capability", nargs="+", choices=configurable)
+        command.add_argument("--config")
+
     login_parser = sub.add_parser("login", help="Authorize and securely store one account")
     login_parser.add_argument("--account")
     logout = sub.add_parser("logout", help="Delete one locally stored session")
@@ -186,6 +237,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "setup":
         return setup_wizard(args)
+    if args.command == "capabilities":
+        return change_capabilities(args)
     if args.command == "login":
         return asyncio.run(login(args.account or load_config().default_account))
     if args.command == "logout":

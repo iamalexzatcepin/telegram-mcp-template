@@ -24,7 +24,7 @@ from telegram_mcp.capabilities import (
 )
 from telegram_mcp.client import telegram_client
 from telegram_mcp.config import config_dir
-from telegram_mcp.safety import require_confirmation
+from telegram_mcp.safety import confirmation_target, require_confirmation
 
 from .common import message_dict
 
@@ -36,19 +36,36 @@ def _parse_datetime(value: str) -> datetime:
     return parsed
 
 
-async def send_message(chat: str, text: str, account: str = "") -> dict:
-    """Send a Telegram text message."""
+async def send_message(
+    chat: str,
+    text: str,
+    confirm: bool = False,
+    confirm_target: str = "",
+    account: str = "",
+) -> dict:
+    """Send text only after fresh human confirmation of recipient and final text."""
     if not text.strip():
         raise ValueError("text must not be blank")
+    target = confirmation_target("send_message", chat=chat, text=text)
+    require_confirmation("send_message", target, confirm, confirm_target)
     async with telegram_client(account) as client:
         sent = await client.send_message(await client.get_entity(chat), text)
         return await message_dict(sent)
 
 
-async def reply_message(chat: str, message_id: int, text: str, account: str = "") -> dict:
-    """Reply to a specific Telegram message."""
+async def reply_message(
+    chat: str,
+    message_id: int,
+    text: str,
+    confirm: bool = False,
+    confirm_target: str = "",
+    account: str = "",
+) -> dict:
+    """Reply only after fresh human confirmation of recipient and final text."""
     if not text.strip():
         raise ValueError("text must not be blank")
+    target = confirmation_target("reply_message", chat=chat, message_id=message_id, text=text)
+    require_confirmation("reply_message", target, confirm, confirm_target)
     async with telegram_client(account) as client:
         sent = await client.send_message(await client.get_entity(chat), text, reply_to=message_id)
         return await message_dict(sent)
@@ -84,12 +101,18 @@ async def forward_messages(
     from_chat: str,
     to_chat: str,
     message_ids: list[int],
+    confirm: bool = False,
+    confirm_target: str = "",
     account: str = "",
 ) -> dict:
-    """Forward messages between chats."""
+    """Forward messages only after fresh human confirmation of source, ids, and recipient."""
     ids = sorted({int(item) for item in message_ids})
     if not ids:
         raise ValueError("message_ids must not be empty")
+    target = confirmation_target(
+        "forward_messages", from_chat=from_chat, to_chat=to_chat, message_ids=ids
+    )
+    require_confirmation("forward_messages", target, confirm, confirm_target)
     async with telegram_client(account) as client:
         source = await client.get_entity(from_chat)
         target = await client.get_entity(to_chat)
@@ -177,11 +200,25 @@ async def clear_draft(chat: str, account: str = "") -> dict:
     return {"account": account, "chat": chat, "draft_cleared": True}
 
 
-async def schedule_message(chat: str, text: str, schedule_at: str, account: str = "") -> dict:
-    """Schedule a text message at an ISO 8601 time with timezone."""
+async def schedule_message(
+    chat: str,
+    text: str,
+    schedule_at: str,
+    confirm: bool = False,
+    confirm_target: str = "",
+    account: str = "",
+) -> dict:
+    """Schedule text only after fresh human confirmation of recipient, text, and time."""
+    if not text.strip():
+        raise ValueError("text must not be blank")
+    parsed = _parse_datetime(schedule_at)
+    target = confirmation_target(
+        "schedule_message", chat=chat, text=text, schedule_at=schedule_at
+    )
+    require_confirmation("schedule_message", target, confirm, confirm_target)
     async with telegram_client(account) as client:
         sent = await client.send_message(
-            await client.get_entity(chat), text, schedule=_parse_datetime(schedule_at)
+            await client.get_entity(chat), text, schedule=parsed
         )
         return await message_dict(sent)
 
@@ -243,9 +280,20 @@ async def download_media(chat: str, message_id: int, account: str = "") -> dict:
     return {"account": account, "chat": chat, "message_id": message_id, "path": path}
 
 
-async def send_media(chat: str, file_path: str, caption: str = "", account: str = "") -> dict:
-    """Send a file confined to TELEGRAM_MCP_UPLOAD_DIR."""
+async def send_media(
+    chat: str,
+    file_path: str,
+    caption: str = "",
+    confirm: bool = False,
+    confirm_target: str = "",
+    account: str = "",
+) -> dict:
+    """Send a confined file only after fresh human confirmation."""
     path = _upload_path(file_path)
+    target = confirmation_target(
+        "send_media", chat=chat, file_path=str(path), caption=caption
+    )
+    require_confirmation("send_media", target, confirm, confirm_target)
     async with telegram_client(account) as client:
         sent = await client.send_file(await client.get_entity(chat), path, caption=caption)
         return await message_dict(sent)
@@ -260,11 +308,21 @@ async def create_poll(
     question: str,
     options: list[str],
     multiple_choice: bool = False,
+    confirm: bool = False,
+    confirm_target: str = "",
     account: str = "",
 ) -> dict:
-    """Create a Telegram poll with two to ten options."""
+    """Create a poll only after fresh human confirmation of destination and content."""
     if not 2 <= len(options) <= 10:
         raise ValueError("poll requires 2 to 10 options")
+    target = confirmation_target(
+        "create_poll",
+        chat=chat,
+        question=question,
+        options=options,
+        multiple_choice=multiple_choice,
+    )
+    require_confirmation("create_poll", target, confirm, confirm_target)
     answers = [types.PollAnswer(text=_text(item), option=str(index).encode()) for index, item in enumerate(options)]
     poll = types.Poll(
         id=random.getrandbits(63),

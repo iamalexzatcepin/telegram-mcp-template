@@ -59,6 +59,17 @@ On Windows use `.venv\Scripts\telegram-mcp.exe`.
 
 Changing the profile changes the MCP schema. Restart the server and start a fresh agent task after every capability change.
 
+Individual permissions can be changed without resetting the selected profile, accounts, or session:
+
+```bash
+telegram-mcp capabilities enable schedule
+telegram-mcp capabilities disable schedule
+```
+
+The change is written atomically to the owner-only config. A fresh agent task is still required because MCP clients cache the exposed tool schema.
+
+Every operation that transmits content to another Telegram user — immediate send, reply, forward, scheduled message, media, or poll — requires fresh runtime confirmation bound to the exact destination and content. Enabling a capability alone never authorizes a send. Draft creation remains non-transmitting and does not require confirmation.
+
 ## Generic MCP clients
 
 The compatibility entrypoint remains `telegram_mcp_server.py` and always uses STDIO:

@@ -5,7 +5,8 @@ Follow this file sequentially. Do not read secret files or ask the user to paste
 1. Confirm the repository is a user-owned local checkout and Python is at least 3.10.
 2. Read `SECURITY.md`. Keep STDIO as the only transport; do not add a tunnel, HTTP, SSE, or shared host.
 3. Run the operating-system setup script. If dependencies cannot be downloaded, request normal network approval rather than changing package sources.
-4. Let the user operate `telegram-mcp setup` in the terminal. Recommend `read-only`; explain additions before selecting `assistant`, `power-user`, or custom capabilities.
+4. Let the user operate `telegram-mcp setup` in the terminal. Recommend `read-only`; explain additions before selecting `assistant`, `power-user`, or custom capabilities. For a narrow later addition, use `telegram-mcp capabilities enable <name>` so existing accounts and settings are preserved.
+5. Treat capability permission and action authorization separately. Before sending, replying, forwarding, scheduling, uploading media, or creating a poll, show the exact destination, final content, and scheduled time if applicable, then obtain fresh human confirmation. Only after that confirmation may the exact `confirm_target` guard be satisfied.
 5. Run `telegram-mcp permissions` and show only the profile, capabilities, and exposed tool names.
 6. Direct the user to `my.telegram.org` for their personal `api_id` and `api_hash`. Run `telegram-mcp login --account <name>` in a user-visible terminal and pause while the user privately enters API hash, phone, login code, 2FA, and any fallback master key.
 7. Never open `.env`, OS keyring entries, encrypted session files, config encryption keys, or raw cache databases. Secret-free `storage` and `diagnostics` commands are allowed.
